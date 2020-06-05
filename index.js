@@ -1,16 +1,26 @@
+'use strict';
+
 const store = {
   items: [
-    { id: cuid(), name: 'apples', checked: false },
-    { id: cuid(), name: 'oranges', checked: false },
-    { id: cuid(), name: 'milk', checked: true },
-    { id: cuid(), name: 'bread', checked: false }
+    { id: cuid(), name: 'apples', checked: false, renameToggle: false},
+    { id: cuid(), name: 'oranges', checked: false, renameToggle: false},
+    { id: cuid(), name: 'milk', checked: true, renameToggle: false},
+    { id: cuid(), name: 'bread', checked: false, renameToggle: false}
   ],
   hideCheckedItems: false
+  
 };
 
 const generateItemElement = function (item) {
   let itemTitle = `<span class='shopping-item shopping-item__checked'>${item.name}</span>`;
-  if (!item.checked) {
+  if (item.renameToggle) {
+    itemTitle = `
+    <form>  
+    <input type="text" id="fname" name="newName" class='new-name-entry' required>
+    <input type="submit" class='rename-submit' value="Submit">
+    </form>
+    `;
+  }else if (!item.checked) {
     itemTitle = `
      <span class='shopping-item'>${item.name}</span>
     `;
@@ -20,6 +30,9 @@ const generateItemElement = function (item) {
     <li class='js-item-element' data-item-id='${item.id}'>
       ${itemTitle}
       <div class='shopping-item-controls'>
+        <button class='shopping-item-rename js-item-rename'>
+          <span class='button-label'>rename</span>
+        </button>
         <button class='shopping-item-toggle js-item-toggle'>
           <span class='button-label'>check</span>
         </button>
@@ -145,6 +158,53 @@ const handleToggleFilterClick = function () {
   });
 };
 
+const toggleRenameToggle = function (id) {
+  const foundItem = store.items.find(item => item.id === id);
+  foundItem.renameToggle = !foundItem.renameToggle;
+};
+
+/**
+ * Places an event listener on the rename button 
+ * for renaming the item name.
+ */
+const handleItemRenameClicked = function () {
+  $('.js-shopping-list').on('click', '.js-item-rename', event => {
+    const id = getItemIdFromElement(event.currentTarget);
+    toggleRenameToggle(id);
+    render();
+  });
+};
+
+/**
+ * Updates item name in store with user submission.
+ */
+
+const renameItem = function (id,newName) {
+  const foundItem = store.items.find(item => item.id === id);
+  foundItem.name = newName;
+};
+
+/**
+ * Places an event listener on the rename submission button 
+ * for after renaming the item name.
+ */
+
+const handleItemRenameSubmit = function () {  
+  $('.js-shopping-list').submit('.rename-submit', event => {
+    event.preventDefault();
+    const id = getItemIdFromElement(event.target);
+    const newName=$('.new-name-entry').val();
+    
+    
+
+    console.log('handleitemrenamesubmit');
+    renameItem(id,newName);
+    toggleRenameToggle(id);
+    render();
+  });
+};
+
+
 /**
  * This function will be our callback when the
  * page loads. It is responsible for initially 
@@ -154,12 +214,15 @@ const handleToggleFilterClick = function () {
  * "check" and "delete" buttons for individual 
  * shopping list items.
  */
+
 const handleShoppingList = function () {
   render();
   handleNewItemSubmit();
   handleItemCheckClicked();
   handleDeleteItemClicked();
   handleToggleFilterClick();
+  handleItemRenameClicked();
+  handleItemRenameSubmit();
 };
 
 // when the page loads, call `handleShoppingList`
